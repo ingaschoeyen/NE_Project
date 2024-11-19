@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from vcd.reader import TokenKind, Reader
+from vcd.reader import TokenKind
 
-file_path = 'sim_res/dump.vcd'
+file_path = 'sim_res/output_waveforms.csv'
 
 
 
@@ -12,7 +12,7 @@ def parse_vcd_to_numpy(vcd_file_path):
     timestamps = []
     signal_data = {}
 
-    with open(vcd_file_path, 'r') as vcd_file:
+    with open(vcd_file_path, 'rbe') as vcd_file:
         reader = Reader(vcd_file)
         
         # Parse VCD content
@@ -56,3 +56,8 @@ if 'csv' in file_path:
 
 if 'vcd' in file_path:
     signal_matrix, unique_timestamps, signals = parse_vcd_to_numpy(file_path)
+    data_array = signal_matrix
+
+
+plt.figure()
+plt.plot(data_array)

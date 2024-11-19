@@ -2,126 +2,131 @@
 
 module tb_top_level_narma_system;
   // Testbench signals
-  reg clk = 1'b0;
-  reg rst;
+  reg clk;
+  reg reset;
   wire [15:0] narma_output;
-  reg [31:0] narma_bitstream;
-  reg [31:0] ext_input = 32'h00000000;
+  reg [31:0] ext_input;
   wire [9:0] i_outs;    // Outputs from each neuron, connected cyclically. Size = N neurons
   
   // Output wires from each neuron
-  wire signed [31:0] VOUT1, VOUT2, VOUT3, VOUT4, VOUT5;
-  wire signed [31:0] VOUT6, VOUT7, VOUT8, VOUT9, VOUT10;
-  reg [7:0] sp_in_1, sp_in_2, sp_in_3, sp_in_4, sp_in_5;
-  reg [7:0] sp_in_6, sp_in_7, sp_in_8, sp_in_9, sp_in_10;
+  wire [31:0] VOUT1, VOUT2, VOUT3, VOUT4, VOUT5;
+  wire [31:0] VOUT6, VOUT7, VOUT8, VOUT9, VOUT10;
   
   // File handle for CSV output
   integer csv_file;
   
+  
   // Instantiate the top-level NARMA system
   top_level_narma_system uut (
     .clk(clk),
-    .rst(rst),
+    .reset(reset),
     .narma_output(narma_output)
   );
   
   // Instantiate bitstream converter
   bitstream_converter converter (
     .y_t(narma_output),
-    .rst(rst),
-    .bitstream_out(narma_bitstream)
+    .rst(reset),
+    .bitstream_out(ext_input)
   );
   
   // Instantiate 10 LIF neurons and connect them cyclically
   lif_neuron neuron1(
-    .i_in(sp_in_1), // Input connected to output of neuron10
+    .i_in({7'b0, i_outs[9]}), // Input connected to output of neuron10
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT1),
     .i_out(i_outs[0])
   );
 
   lif_neuron neuron2(
-    .i_in(sp_in_2),
+    .i_in({7'b0, i_outs[0]}),
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT2),
     .i_out(i_outs[1])
   );
 
   lif_neuron neuron3(
-    .i_in(sp_in_3),
+    .i_in({7'b0, i_outs[1]}),
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT3),
     .i_out(i_outs[2])
   );
   
   lif_neuron neuron4(
-    .i_in(sp_in_4),
+    .i_in({7'b0, i_outs[2]}),
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT4),
     .i_out(i_outs[3])
   );
 
   lif_neuron neuron5(
-    .i_in(sp_in_5),
+    .i_in({7'b0, i_outs[3]}),
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT5),
     .i_out(i_outs[4])
   );
 
   lif_neuron neuron6(
-    .i_in(sp_in_6),
+    .i_in({7'b0, i_outs[4]}),
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT6),
     .i_out(i_outs[5])
   );
   
   lif_neuron neuron7(
-    .i_in(sp_in_7),
+    .i_in({7'b0, i_outs[5]}),
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT7),
     .i_out(i_outs[6])
   );
 
   lif_neuron neuron8(
-    .i_in(sp_in_8),
+    .i_in({7'b0, i_outs[6]}),
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT8),
     .i_out(i_outs[7])
   );
 
   lif_neuron neuron9(
-    .i_in(sp_in_9),
+    .i_in({7'b0, i_outs[7]}),
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT9),
     .i_out(i_outs[8])
   );
 
   lif_neuron neuron10(
-    .i_in(sp_in_10),
+    .i_in({7'b0, i_outs[8]}),
     .ext_input(ext_input),
     .clk(clk),
-    .rst(rst),
+    .rst(reset),
     .VOUT(VOUT10),
     .i_out(i_outs[9])
   );
+  
+  // Intantiate LIF Neurons
+  // Clock generation
+  initial begin
+    clk = 0;
+    forever #50 clk = ~clk; // 10ns period (100 MHz clock)
+  end
   
   // Test procedure
   initial begin
@@ -141,14 +146,13 @@ module tb_top_level_narma_system;
     $dumpvars(0, tb_top_level_narma_system);
     
     // Reset sequence
-    rst = 1;
-
-    #5; // Hold reset for 20ns
-    rst = 0;
+    reset = 1;
+    
+    #200; // Hold reset for 20ns
+    reset = 0;
     
     // Run simulation for a certain duration
-    #20000; // Run for 2000ns
-    
+    #2000; // Run for 2000ns
     // Close the CSV file
     $fclose(csv_file);
     
@@ -156,32 +160,18 @@ module tb_top_level_narma_system;
     $finish;
   end
   
-  always
-    begin
-      #50 clk = ~clk; // Generate clock signal with 90 time unit period
-      
-      ext_input = narma_bitstream;
-      
-      sp_in_1 = {7'b0, i_outs[9]};
-      sp_in_2 = {7'b0, i_outs[0]};
-      sp_in_3 = {7'b0, i_outs[1]};
-      sp_in_4 = {7'b0, i_outs[2]};
-      sp_in_5 = {7'b0, i_outs[3]};
-      sp_in_6 = {7'b0, i_outs[4]};
-      sp_in_7 = {7'b0, i_outs[5]};
-      sp_in_8 = {7'b0, i_outs[6]};
-      sp_in_9 = {7'b0, i_outs[7]};
-      sp_in_10 = {7'b0, i_outs[8]};
-  end
-
-    // Monitor outputs in floats and write to CSV
+  // Monitor outputs in both hexadecimal and decimal formats and write to CSV
   always @(posedge clk) begin
-    if (!rst) begin
+    if (!reset) begin
       $display("Time = %0t ns, NARMA Output as float = %f", $time, convert_to_real(narma_output));
       $fwrite(csv_file, "%0t,%f,%0b\n", $time, convert_to_real(narma_output), ext_input);
     end
   end
   
+  // Monitor outputs in both hexadecimal and decimal formats
+  initial begin
+    $monitor("Time = %0t ns, NARMA Output (hex) = %0h", $time, narma_output);
+  end
   
   // Optional: Conversion to float representation if needed
   function real convert_to_real(input [15:0] fixed_point_value);
