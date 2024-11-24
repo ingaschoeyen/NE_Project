@@ -16,7 +16,7 @@ class spikeData():
             dataset = pd.read_csv(file_path, header=None)
             data_frame = pd.DataFrame(dataset)
             data_array = np.array(data_frame.values)
-            print(data_array.shape)
+            print(f"Shape of data:{data_array.shape}")
         elif 'vcd' in file_path:
             print('VCD file type not supported yet, mayebe in the future')
             exit(1)
