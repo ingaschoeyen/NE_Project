@@ -1,117 +1,32 @@
-module lfsr_req_generator (
-  input wire clk,
-  input wire rst,
-  input wire [15:0] seed, // Seed for the LFSR
-  output reg req
+module step_function (
+    input wire clk,           // Clock signal
+    input wire reset,         // Reset signal
+    output reg [31:0] step_wave_out     // 32-bit output
 );
-  reg [15:0] lfsr;
+    parameter T = 64;         // Total number of clock cycles for the steps
+    parameter MAX_STEPS = 32; // Maximum steps (final value)
 
-  always @(posedge clk or posedge rst) begin
-    if (rst) begin
-      lfsr <= seed; // Initialize LFSR with the seed
-      req <= 0;
-    end else begin
-      // LFSR implementation (16-bit example with taps at positions 16 and 14)
-      lfsr <= {lfsr[14:0], lfsr[15] ^ lfsr[13]};
-      req <= lfsr[0]; // Use the least significant bit as the REQ signal
+    // Internal counter to track time steps
+    reg [$clog2(T):0] counter;
+    
+    // Calculate step interval
+    localparam STEP_INTERVAL = T / MAX_STEPS;
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            // Reset output and counter
+            out <= 0;
+            counter <= 0;
+        end else begin
+            // Increment the counter
+            counter <= counter + 1;
+
+            // Increment the output when counter reaches step interval
+            if (counter % STEP_INTERVAL == 0 && out < MAX_STEPS) begin
+                out <= out + 1;
+            end
+        end
     end
-  end
-endmodule
-
-module sine_wave_generator (
-  input wire clk,
-  input wire rst,
-  input wire [7:0] freq_control, // Frequency control: determines the number of clock cycles to wait before updating
-  output reg [15:0] sine_wave_out
-);
-  reg [5:0] phase_accumulator; // 6-bit phase accumulator for 64 steps
-  reg [15:0] sine_lut [0:63]; // Look-up table for sine values
-  reg [7:0] clk_divider; // 8-bit Clock divider counter
-
-  initial begin
-    // Initialize the sine LUT with precomputed sine values
-    // Values should be scaled to fit within 16 bits
-    sine_lut[0]  = 16'h8000;
-    sine_lut[1]  = 16'h8C8B;
-    sine_lut[2]  = 16'h98F8;
-    sine_lut[3]  = 16'hA527;
-    sine_lut[4]  = 16'hB0FB;
-    sine_lut[5]  = 16'hBC57;
-    sine_lut[6]  = 16'hC71C;
-    sine_lut[7]  = 16'hD133;
-    sine_lut[8]  = 16'hDA82;
-    sine_lut[9]  = 16'hE2F2;
-    sine_lut[10] = 16'hEA6E;
-    sine_lut[11] = 16'hF0E2;
-    sine_lut[12] = 16'hF641;
-    sine_lut[13] = 16'hFA7C;
-    sine_lut[14] = 16'hFD89;
-    sine_lut[15] = 16'hFF61;
-    sine_lut[16] = 16'hFFFF;
-    sine_lut[17] = 16'hFF61;
-    sine_lut[18] = 16'hFD89;
-    sine_lut[19] = 16'hFA7C;
-    sine_lut[20] = 16'hF641;
-    sine_lut[21] = 16'hF0E2;
-    sine_lut[22] = 16'hEA6E;
-    sine_lut[23] = 16'hE2F2;
-    sine_lut[24] = 16'hDA82;
-    sine_lut[25] = 16'hD133;
-    sine_lut[26] = 16'hC71C;
-    sine_lut[27] = 16'hBC57;
-    sine_lut[28] = 16'hB0FB;
-    sine_lut[29] = 16'hA527;
-    sine_lut[30] = 16'h98F8;
-    sine_lut[31] = 16'h8C8B;
-    sine_lut[32] = 16'h8000;
-    sine_lut[33] = 16'h7375;
-    sine_lut[34] = 16'h6708;
-    sine_lut[35] = 16'h5AD9;
-    sine_lut[36] = 16'h4F05;
-    sine_lut[37] = 16'h43A9;
-    sine_lut[38] = 16'h38E4;
-    sine_lut[39] = 16'h2ECD;
-    sine_lut[40] = 16'h257E;
-    sine_lut[41] = 16'h1D0E;
-    sine_lut[42] = 16'h1592;
-    sine_lut[43] = 16'h0F1E;
-    sine_lut[44] = 16'h09BF;
-    sine_lut[45] = 16'h057C;
-    sine_lut[46] = 16'h0277;
-    sine_lut[47] = 16'h009F;
-    sine_lut[48] = 16'h0001;
-    sine_lut[49] = 16'h009F;
-    sine_lut[50] = 16'h0277;
-    sine_lut[51] = 16'h057C;
-    sine_lut[52] = 16'h09BF;
-    sine_lut[53] = 16'h0F1E;
-    sine_lut[54] = 16'h1592;
-    sine_lut[55] = 16'h1D0E;
-    sine_lut[56] = 16'h257E;
-    sine_lut[57] = 16'h2ECD;
-    sine_lut[58] = 16'h38E4;
-    sine_lut[59] = 16'h43A9;
-    sine_lut[60] = 16'h4F05;
-    sine_lut[61] = 16'h5AD9;
-    sine_lut[62] = 16'h6708;
-    sine_lut[63] = 16'h7375;
-  end
-
-  always @(posedge clk or posedge rst) begin
-    if (rst) begin
-      phase_accumulator <= 6'b0;
-      sine_wave_out <= 16'b0;
-      clk_divider <= 8'b0;
-    end else begin
-      if (clk_divider == freq_control) begin
-        clk_divider <= 8'b0;
-        phase_accumulator <= phase_accumulator + 6'b1; // Increment phase
-        sine_wave_out <= sine_lut[phase_accumulator]; // Output sine value
-      end else begin
-        clk_divider <= clk_divider + 8'b1;
-      end
-    end
-  end
 endmodule
 
 module top_module (
@@ -119,19 +34,19 @@ module top_module (
   input wire rst,
   input wire [7:0] freq_control, // Frequency control input
   output wire [31:0] bitstream_out,
-  output wire [15:0] sine_wave_out
+  output wire [15:0] step_wave_out
 );
-  //wire [15:0] sine_wave;
+  //wire [15:0] step_wave;
 
-  sine_wave_generator sine_gen (
+  step_function step_wave (
     .clk(clk),
     .rst(rst),
     .freq_control(freq_control),
-    .sine_wave_out(sine_wave_out)
+    .step_wave_out(step_wave_out)
   );
 
   bitstream_converter bitstream_conv (
-    .y_t(sine_wave_out),
+    .y_t(step_wave_out),
     .rst(rst),
     .bitstream_out(bitstream_out)
   );
