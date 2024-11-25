@@ -1,28 +1,55 @@
+import os
 import subprocess
+import pandas as pd
 
-# Step 1: Compile the Verilog file using Icarus Verilog
-verilog_file = 'test.v'
-output_executable = 'test_out'
-compile_command = ['iverilog', '-o', output_executable, verilog_file]
+# Get the absolute path to the directory containing the script
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
-try:
-    compile_result = subprocess.run(compile_command, check=True, capture_output=True, text=True)
-    print("Compilation Output:\n", compile_result.stdout)
-except subprocess.CalledProcessError as e:
-    print("Compilation failed with error:\n", e.stderr)
-    exit(1)
+# Paths to the Verilog folder and files
+project_dir = os.path.dirname(script_dir)  # Move one level up to the project directory
+verilog_folder = os.path.join(project_dir, "verilog")
+testbench_file = os.path.join(verilog_folder, "testbench_step.sv")
+design_file = os.path.join(verilog_folder, "design_step.sv")
 
-# Step 2: Run the compiled executable and capture the output
-run_command = ['vvp', output_executable]
-try:
-    run_result = subprocess.run(run_command, check=True, capture_output=True, text=True)
-    simulation_output = run_result.stdout
-    print("Simulation Output:\n", simulation_output)
+# Output directory for simulation
+output_csv = os.path.join(project_dir, "sim_res")
+output_vcd = os.path.join(project_dir, "verilog_out")
+os.makedirs(output_csv, exist_ok=True)
+os.makedirs(output_vcd, exist_ok=True)
 
-    # Step 3: Save the output to a file
-    with open('verilog_output.txt', 'w') as file:
-        file.write(simulation_output)
-    print("Output saved to verilog_output.txt")
+# VCD (Value Change Dump) file and CSV output file
+vcd_file = os.path.join(output_vcd, "top_level_ESN_system_step.vcd")
+csv_file = os.path.join(output_csv, "output_waveforms_step.csv")
 
-except subprocess.CalledProcessError as e:
-    print("Simulation failed with error:\n", e.stderr)
+# Compile and run the Verilog files using Icarus Verilog
+def run_verilog_simulation():
+    # Compile command
+    compile_cmd = ["iverilog", "-o", os.path.join(output_vcd, "sim.out"), testbench_file, design_file]
+    print("Compiling Verilog files...")
+    subprocess.run(compile_cmd, check=True)
+
+    # Run the simulation
+    run_cmd = ["vvp", os.path.join(output_vcd, "sim.out")]
+    print("Running simulation...")
+    with open(csv_file, "w") as csv_output:
+        subprocess.run(run_cmd, stdout=csv_output, check=True)
+    print("Simulation completed!")
+
+# Clean CSV output (if required)
+def parse_csv_output(csv_path):
+    print("Cleaning CSV output...")
+    # remove first two lines from csv file
+    with open(csv_path, "r") as f:
+        lines = f.readlines()
+    with open(csv_path, "w") as f:
+        f.writelines(lines[2:])
+    print("CSV output cleaned!")
+
+# Main function to execute
+if __name__ == "__main__":
+    try:
+        # Run the simulation
+        run_verilog_simulation()
+        parse_csv_output(csv_file)
+    except Exception as e:
+        print(f"Error during simulation: {e}")

@@ -1,7 +1,27 @@
+module lfsr_req_generator (
+  input wire clk,
+  input wire rst,
+  input wire [15:0] seed, // Seed for the LFSR
+  output reg req
+);
+  reg [15:0] lfsr;
+
+  always @(posedge clk or posedge rst) begin
+    if (rst) begin
+      lfsr <= seed; // Initialize LFSR with the seed
+      req <= 0;
+    end else begin
+      // LFSR implementation (16-bit example with taps at positions 16 and 14)
+      lfsr <= {lfsr[14:0], lfsr[15] ^ lfsr[13]};
+      req <= lfsr[0]; // Use the least significant bit as the REQ signal
+    end
+  end
+endmodule
+
 module step_function (
     input wire clk,           // Clock signal
-    input wire reset,         // Reset signal
-    output reg [31:0] step_wave_out     // 32-bit output
+    input wire rst,         // Reset signal
+    output reg [15:0] step_wave_out     // 16-bit output
 );
     parameter T = 64;         // Total number of clock cycles for the steps
     parameter MAX_STEPS = 32; // Maximum steps (final value)
@@ -12,18 +32,16 @@ module step_function (
     // Calculate step interval
     localparam STEP_INTERVAL = T / MAX_STEPS;
 
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            // Reset output and counter
-            out <= 0;
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            step_wave_out <= 0;
             counter <= 0;
         end else begin
-            // Increment the counter
             counter <= counter + 1;
 
             // Increment the output when counter reaches step interval
-            if (counter % STEP_INTERVAL == 0 && out < MAX_STEPS) begin
-                out <= out + 1;
+            if (counter % STEP_INTERVAL == 0 && step_wave_out < MAX_STEPS) begin
+                step_wave_out <= step_wave_out + 1;
             end
         end
     end
@@ -36,13 +54,11 @@ module top_module (
   output wire [31:0] bitstream_out,
   output wire [15:0] step_wave_out
 );
-  //wire [15:0] step_wave;
-
+  
   step_function step_wave (
     .clk(clk),
     .rst(rst),
-    .freq_control(freq_control),
-    .step_wave_out(step_wave_out)
+    .step_wave_out(step_wave_out) // Make sure this matches the size (16 bits)
   );
 
   bitstream_converter bitstream_conv (

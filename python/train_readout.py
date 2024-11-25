@@ -127,7 +127,7 @@ class readoutNet():
         test_error, correlation = self.test()
         fig = plt.figure(figsize=(25,6))
         plt.plot(self.error, label='Train Error')
-        plt.axhline(test_error, label=f'Test Error, Cor = {correlation}', color='r')
+        plt.axhline(test_error, label=f'Test Error, Cor = {np.mean(correlation)}', color='r')
         plt.title('Train Outcome')
         plt.xlabel('Time')
         plt.ylabel('Signal')
@@ -137,11 +137,13 @@ class readoutNet():
 
     def plot_prediction(self):
         target_out, signal_reconstructed = self.predict()
+        test_error, correlation = self.test()
         fig = plt.figure(figsize=(25,6))
-        # plt.plot(self.target_test, label='Target')
-        # plt.plot(target_out, label='Prediction')
+        plt.plot(self.target_test, label='Target')
+        plt.plot(target_out, label='Prediction')
         plt.plot(self.signal_test, label='Input Signal')
         plt.plot(signal_reconstructed, label='Reconstructed Signal')
+        plt.plot(correlation, label='Correlation, mean error = ' + str(test_error))
         plt.title('Prediction')
         plt.xlabel('Time')
         plt.ylabel('Signal')
@@ -151,10 +153,10 @@ class readoutNet():
 
 
 if __name__ == "__main__":
-    file_path = 'sim_res/output_waveforms_sine.csv'
+    file_path = 'sim_res/output_waveforms_step.csv'
     data = spike_data.spikeData(file_path)
-    readout = readoutNet(data, output_size=1, batch_size=50, af=True)
+    readout = readoutNet(data, output_size=1, batch_size=100, af=True)
     W, b = readout.train()
     y = readout.test()
-    # readout.plot_error()
+    readout.plot_error()
     readout.plot_prediction()
