@@ -114,7 +114,6 @@ class readoutNet():
             target_out = max_index
             # make prediction based on index with max value
             prediction = signal_range*max_index/(self.output_size-1)
-            print(prediction)
         elif self.out_type == 'full':
             prediction = signal_range*np.sum(net_out, axis=1)/(self.output_size-1)
             target_out = np.sum(self.target_test, axis=1)
@@ -138,24 +137,31 @@ class readoutNet():
     def plot_prediction(self):
         target_out, signal_reconstructed = self.predict()
         test_error, correlation = self.test()
-        fig = plt.figure(figsize=(25,6))
-        plt.plot(self.target_test, label='Target')
-        plt.plot(target_out, label='Prediction')
+        print("Correlation shape:", correlation.shape)
+        plt.figure(figsize=(25,6))
+        plt.subplot(2,1,1)
+        plt.plot(np.argmax(self.target_test), label='Target')
+        plt.plot(np.argmax(target_out), label='Prediction')
+        plt.title('Output')
+        plt.xlabel('Time')
+        plt.ylabel('Signal')
+        plt.legend()
+        plt.subplot(2,1,2)
         plt.plot(self.signal_test, label='Input Signal')
         plt.plot(signal_reconstructed, label='Reconstructed Signal')
-        plt.plot(correlation, label='Correlation, mean error = ' + str(test_error))
+        # plt.plot(, label='Correlation, mean error = ' + str(test_error))
         plt.title('Prediction')
         plt.xlabel('Time')
         plt.ylabel('Signal')
         plt.legend()
         plt.show()
-        return fig
+
 
 
 if __name__ == "__main__":
-    file_path = 'sim_res/output_waveforms_step.csv'
+    file_path = 'sim_res/output_waveforms_sine.csv'
     data = spike_data.spikeData(file_path)
-    readout = readoutNet(data, output_size=1, batch_size=100, af=True)
+    readout = readoutNet(data, output_size=32, batch_size=10, af=True)
     W, b = readout.train()
     y = readout.test()
     readout.plot_error()

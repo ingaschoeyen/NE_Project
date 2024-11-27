@@ -17,14 +17,14 @@ module lfsr_req_generator (
     end
   end
 endmodule
-
 module step_function (
-    input wire clk,           // Clock signal
-    input wire rst,         // Reset signal
-    output reg [15:0] step_wave_out     // 16-bit output
+    input wire clk,                  // Clock signal
+    input wire rst,                  // Reset signal
+    output reg [15:0] step_wave_out  // 16-bit output
 );
-    parameter T = 64;         // Total number of clock cycles for the steps
-    parameter MAX_STEPS = 32; // Maximum steps (final value)
+    parameter T = 64;                // Total number of clock cycles for the steps
+    parameter MAX_STEPS = 50;        // Maximum steps (final value)
+    parameter SCALE_FACTOR = 10;      // Step size scaling factor
 
     // Internal counter to track time steps
     reg [$clog2(T):0] counter;
@@ -32,16 +32,25 @@ module step_function (
     // Calculate step interval
     localparam STEP_INTERVAL = T / MAX_STEPS;
 
+    // Ensure valid STEP_INTERVAL
+    initial begin
+        if (STEP_INTERVAL == 0) begin
+            $display("Error: STEP_INTERVAL must be greater than 0. Check T and MAX_STEPS parameters.");
+            $finish;
+        end
+    end
+
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            step_wave_out <= 0;
-            counter <= 0;
+            step_wave_out <= 0;      // Reset the output
+            counter <= 0;           // Reset the counter
         end else begin
-            counter <= counter + 1;
+            counter <= counter + 1; // Increment the counter
 
-            // Increment the output when counter reaches step interval
-            if (counter % STEP_INTERVAL == 0 && step_wave_out < MAX_STEPS) begin
-                step_wave_out <= step_wave_out + 1;
+            // Increment step output when counter reaches STEP_INTERVAL
+            if (counter >= STEP_INTERVAL && step_wave_out < MAX_STEPS) begin
+                step_wave_out <= step_wave_out + SCALE_FACTOR; // Increment output
+                counter <= 0;  // Reset the counter after a step is made
             end
         end
     end

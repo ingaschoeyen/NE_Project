@@ -5,11 +5,14 @@ import pandas as pd
 # Get the absolute path to the directory containing the script
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
+# input signal form
+inpt = 'narma'
+
 # Paths to the Verilog folder and files
 project_dir = os.path.dirname(script_dir)  # Move one level up to the project directory
 verilog_folder = os.path.join(project_dir, "verilog")
-testbench_file = os.path.join(verilog_folder, "testbench_step.sv")
-design_file = os.path.join(verilog_folder, "design_step.sv")
+testbench_file = os.path.join(verilog_folder, f"testbench_{inpt}.sv")
+design_file = os.path.join(verilog_folder, f"design_{inpt}.sv")
 
 # Output directory for simulation
 output_csv = os.path.join(project_dir, "sim_res")
@@ -18,8 +21,8 @@ os.makedirs(output_csv, exist_ok=True)
 os.makedirs(output_vcd, exist_ok=True)
 
 # VCD (Value Change Dump) file and CSV output file
-vcd_file = os.path.join(output_vcd, "top_level_ESN_system_step.vcd")
-csv_file = os.path.join(output_csv, "output_waveforms_step.csv")
+vcd_file = os.path.join(output_vcd, f"top_level_ESN_system_{inpt}.vcd")
+csv_file = os.path.join(output_csv, f"output_waveforms_{inpt}.csv")
 
 # Compile and run the Verilog files using Icarus Verilog
 def run_verilog_simulation():

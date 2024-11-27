@@ -166,7 +166,7 @@ module top_level_ESN_system;
     rst = 0;
     
     // Run simulation for a certain duration
-    #50000; // Run
+    #500000; // Run
     
     // Close the CSV file
     $fclose(csv_file);
