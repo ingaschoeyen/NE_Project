@@ -271,7 +271,7 @@ module lif_neuron(sp_in, ext_input, clk, rst, req_seed, VOUT, i_out);
                   VOUT <= 32'h00000000;
                   i_out <= 1'b1;
                   n_s <= s0;
-              end
+               end
           endcase
       end
   end

@@ -17,6 +17,7 @@ module lfsr_req_generator (
     end
   end
 endmodule
+
 module step_function (
     input wire clk,                  // Clock signal
     input wire rst,                  // Reset signal

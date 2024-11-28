@@ -6,7 +6,7 @@ import pandas as pd
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # input signal form
-inpt = 'narma'
+inpt = 'sine'
 
 # Paths to the Verilog folder and files
 project_dir = os.path.dirname(script_dir)  # Move one level up to the project directory

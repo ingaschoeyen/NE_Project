@@ -5,7 +5,7 @@ module tb_top_level_narma_system;
   reg clk = 1'b0;
   reg rst;
   wire [15:0] narma_output;
-  reg [31:0] narma_bitstream;
+  wire [31:0] narma_bitstream;
   reg [31:0] ext_input = 32'h00000000;
   wire [9:0] i_outs;    // Outputs from each neuron, connected cyclically. Size = N neurons
   
@@ -28,7 +28,6 @@ module tb_top_level_narma_system;
   // Instantiate bitstream converter
   bitstream_converter converter (
     .y_t(narma_output),
-    .rst(rst),
     .bitstream_out(narma_bitstream)
   );
   
@@ -174,15 +173,20 @@ module tb_top_level_narma_system;
       sp_in_10 = {7'b0, i_outs[8]};
   end
 
-    // Monitor outputs in floats and write to CSV
+  integer i;
+
+  // Monitor outputs in floats and write to CSV
   always @(posedge clk) begin
     if (!rst) begin
-      $display("Time = %0t ns, NARMA Output as float = %f", $time, convert_to_real(narma_output));
-      $fwrite(csv_file, "%0t,%f,%0b\n", $time, convert_to_real(narma_output), ext_input);
+      $fwrite(csv_file, "%0t, %0f", $time, convert_to_real(narma_output));
+      for (i = 0; i < 10; i = i + 1) begin
+        $fwrite(csv_file, ", %0b", i_outs[i]);
+      end
+      $fwrite(csv_file, "\n");
     end
   end
-  
-  
+    
+    
   // Optional: Conversion to float representation if needed
   function real convert_to_real(input [15:0] fixed_point_value);
     begin

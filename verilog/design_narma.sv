@@ -1,13 +1,13 @@
 // LFSR Module for Generating Pseudo-Random Input
 module lfsr_random_input (
   input wire clk,
-  input wire reset,
+  input wire rst,
   output reg [15:0] lfsr_out
 );
   reg [15:0] lfsr = 16'hACE1; // Initial seed for LFSR
   
-  always @(posedge clk or posedge reset) begin
-    if (reset) begin
+  always @(posedge clk or posedge rst) begin
+    if (rst) begin
       lfsr <= 16'hACE1; // Reset LFSR to initial seed
     end else begin
       // Feedback calculation for 16-bit LFSR (x^16 + x^14 + x^13 + x^11 + 1)
@@ -21,7 +21,7 @@ endmodule
 // NARMA-10 Generator Module
 module narma10_generator (
   input wire clk,
-  input wire reset,
+  input wire rst,
   input wire [15:0] u_t, // Input from LFSR
   output reg [15:0] y_t // 16-bit output representing the NARMA output
 );
@@ -31,8 +31,8 @@ module narma10_generator (
   
   integer i;
   
-  always @(posedge clk or posedge reset) begin
-    if (reset) begin
+  always @(posedge clk or posedge rst) begin
+    if (rst) begin
       // Initialize histories
       for (i = 0; i < N; i = i + 1) begin
         y_history[i] <= 16'd0;
@@ -63,7 +63,7 @@ endmodule
 // Top-level Module to Integrate LFSR with NARMA
 module top_level_narma_system (
   input wire clk,
-  input wire reset,
+  input wire rst,
   output wire [15:0] narma_output
 );
   wire [15:0] lfsr_output;
@@ -71,14 +71,14 @@ module top_level_narma_system (
   // Instantiate LFSR module
   lfsr_random_input lfsr_inst (
     .clk(clk),
-    .reset(reset),
+    .rst(rst),
     .lfsr_out(lfsr_output)
   );
   
   // Instantiate NARMA-10 generator module
   narma10_generator narma_gen (
     .clk(clk),
-    .reset(reset),
+    .rst(rst),
     .u_t(lfsr_output),
     .y_t(narma_output)
   );
@@ -109,7 +109,7 @@ module bitstream_converter (
 endmodule
 
 
-module lif_neuron(i_in, clk, rst, VOUT, i_out);
+module lif_neuron(i_in, ext_input, clk, rst, VOUT, i_out);
   input [7:0] i_in; // Allow 8 input signals, represented as on/off
   input [31:0] ext_input;      // 32-bit bitstream input from ARMA function
   input clk, rst;

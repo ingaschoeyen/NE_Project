@@ -10,16 +10,16 @@ inpt = 'sine'
 file_path = f'sim_res/output_waveforms_{inpt}.csv'
 
 # function to plot spike rasters from waveform data
-def plot_spike_raster(spike_data, save_figs, title='Spike Raster Plot', xlabel='Time (s)', ylabel='Neuron Index'):
+def plot_spike_raster(spike_data, save_figs, title='Spike Raster Plot', xlabel='Time (s)', ylabel='Neuron Index', win=[100, 1100]):
     spikes = spike_data.spike_times
-    mean_cor = get_correlation(spike_data)
-    f, (a0, a1) = plt.subplots(2, 1, height_ratios=[3,1], figsize=(25,6))
+    mean_cor = spike_data.get_correlation()
+    f, (a0, a1) = plt.subplots(2, 1, height_ratios=[3,1], figsize=(30,6))
     for i in range(spikes.shape[1]):
-        a0.plot((i+1)*spikes[:, i], '|', label='Neuron ' + str(i))
+        a0.plot((i+1)*spikes[win[0]:win[1], i], '|', linewidth=0.5, label='Neuron ' + str(i))
     a0.set_xlabel(xlabel)
     a0.set_ylabel(ylabel)
     a0.legend(loc='upper right', ncol = 2)
-    a1.plot(mean_cor)
+    a1.plot(mean_cor[win[0]:win[1]])
     a1.set_xlabel('Time (s)')
     a1.set_ylabel('Correlation')
     plt.suptitle(title)
@@ -28,7 +28,7 @@ def plot_spike_raster(spike_data, save_figs, title='Spike Raster Plot', xlabel='
     plt.show()
 
 # function to plot spike histograms from waveform data
-def plot_spike_rate_histogram(spike_data, save_figs, bins=50, title='Spike Histogram', xlabel='Frequency', ylabel='Frequency'):
+def plot_spike_rate_histogram(spike_data, save_figs, bins=50, title='Spike Histogram', xlabel='Frequency', ylabel='Frequency', win=[100, 1100]):
     av_spike_rates = np.mean(spike_data.spike_rates, axis=1)
     plt.figure()
     plt.hist(av_spike_rates, bins=bins)
@@ -40,13 +40,13 @@ def plot_spike_rate_histogram(spike_data, save_figs, bins=50, title='Spike Histo
     plt.show()
 
 # function to plot spike rates from waveform data
-def plot_spike_rates(spike_data, save_figs, title='Spike Rates', xlabel='Time (s)', ylabel='Rate (Hz)'):
+def plot_spike_rates(spike_data, save_figs, title='Spike Rates', xlabel='Time (s)', ylabel='Rate (Hz)', win=[100, 1100]):
     spike_rates = spike_data.spike_rates    
     pv = get_population_vector(spike_data)
     plt.figure(figsize=(30,5))
     for i in range(spike_rates.shape[1]):
-        plt.plot(spike_data.time, spike_rates[:, i]+(i*0.2), linestyle='dotted', label='Neuron ' + str(i), alpha=0.5)
-    plt.plot(spike_data.time, pv[:,1]-0.25, label='Population Rate')
+        plt.plot(spike_data.time[win[0]:win[1]], spike_rates[win[0]:win[1], i]+(i*0.2), linestyle='dotted', label='Neuron ' + str(i), alpha=0.5)
+    plt.plot(spike_data.time[win[0]:win[1]], pv[win[0]:win[1],1]-0.25, label='Population Rate')
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -58,7 +58,7 @@ def plot_spike_rates(spike_data, save_figs, title='Spike Rates', xlabel='Time (s
 
 
 
-def plot_population_vector(spike_data, save_figs, fr = (0, 10000)):
+def plot_population_vector(spike_data, save_figs, fr = (100, 1100)):
     pv = get_population_vector(spike_data)
     plt.figure(figsize=(30,3))
     plt.subplot(2,1,1)
@@ -92,33 +92,6 @@ def plot_phase_diagram(spike_data, save_figs):
     plt.show()
 
 
-def get_population_vector(spike_data):
-    population_vector = np.zeros((spike_data.spike_times.shape[0], 2))
-    spike_times = spike_data.spike_times
-    spike_rates = spike_data.spike_rates
-    population_vector[:,0] = np.mean(spike_times, axis=1)
-    population_vector[:,1] = np.mean(spike_rates, axis=1)
-    return population_vector
-
-def get_correlation(spike_data):
-    T = spike_data.spike_times.shape[0]
-    N = spike_data.spike_times.shape[1]
-    window_size = 100
-    spike_trains = spike_data.spike_times
-    mean_corrs = []
-    for t in range(spike_data.spike_times.shape[0]):
-        if t < window_size // 2 or t >= T - window_size // 2:
-            # Skip edges if using a window
-            mean_corrs.append(np.nan)
-        else:
-            # Extract activity in the window
-            window_data = spike_trains[t - window_size // 2:t + window_size // 2, :]
-            # Pairwise correlations
-            corr_matrix = np.corrcoef(window_data, rowvar=False)
-            # Compute mean of upper triangle (excluding diagonal)
-            mean_corr = np.mean(corr_matrix[np.triu_indices(N, k=1)])
-            mean_corrs.append(mean_corr)
-    return np.array(mean_corrs)
 
 
 if __name__ == '__main__':
